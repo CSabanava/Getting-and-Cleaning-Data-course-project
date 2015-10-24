@@ -1,3 +1,8 @@
+if("plyr" %in% rownames(installed.packages()) == FALSE) {install.packages("plyr")}
+library(plyr)
+if("reshape" %in% rownames(installed.packages()) == FALSE) {install.packages("reshape")}
+library(rehape)
+
 if(!file.exists("./gcd project")){dir.create("./gcd project")}
 fileURL <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
 download.file(fileURL,destfile = "./gcd project/data.zip")
@@ -5,71 +10,36 @@ unzip("./gcd project/data.zip")
 
 setwd("./UCI Har Dataset")
 
-subject_tests <- read.fwf("./test/subject_test.txt",widths = c(3))
-X_test <- read.fwf("./test/X_test.txt",widths = c(15))
-y_test <- read.fwf("./test/y_test.txt",widths = c(3))
-body_acc_x_test <- read.fwf("./test/Inertial Signals/body_acc_x_test.txt",widths = c(16))
-body_acc_y_test <- read.fwf("./test/Inertial Signals/body_acc_y_test.txt",widths = c(16))
-body_acc_z_test <- read.fwf("./test/Inertial Signals/body_acc_z_test.txt",widths = c(16))
-body_gyro_x_test <- read.fwf("./test/Inertial Signals/body_acc_x_test.txt",widths = c(16))
-body_gyro_y_test <- read.fwf("./test/Inertial Signals/body_acc_y_test.txt",widths = c(16))
-body_gyro_z_test <- read.fwf("./test/Inertial Signals/body_acc_z_test.txt",widths = c(16))
-total_acc_x_test <- read.fwf("./test/Inertial Signals/total_acc_x_test.txt",widths = c(16))
-total_acc_y_test <- read.fwf("./test/Inertial Signals/total_acc_y_test.txt",widths = c(16))
-total_acc_z_test <- read.fwf("./test/Inertial Signals/total_acc_z_test.txt",widths = c(16))
 
-test <- data.frame(subject_tests,X_test,y_test,body_acc_x_test,body_acc_y_test,
-                   body_acc_z_test,body_gyro_x_test,body_gyro_y_test,body_gyro_z_test,
-                   total_acc_x_test,total_acc_y_test,total_acc_z_test)
-names(test) <- c("subject","X_test","y_test","body_acc_x_test","body_acc_y_test",
-                 "body_acc_z_test","body_gyro_x_test","body_gyro_y_test","body_gyro_z_test",
-                 "total_acc_x_test","total_acc_y_test","total_acc_z_test")
+activity_labels <- read.table("C:/Users/Enrique/Downloads/UCI HAR Dataset/activity_labels.txt", quote="\"", comment.char="")
+features <- read.table("C:/Users/Enrique/Downloads/UCI HAR Dataset/features.txt", quote="\"", comment.char="")
+
+
+subject_tests <- read.fwf("./test/subject_test.txt",widths = c(3))
+X_test <- read.table("C:/Users/Enrique/Downloads/UCI HAR Dataset/test/X_test.txt", quote="\"", comment.char="")
+y_test <- read.table("C:/Users/Enrique/Downloads/UCI HAR Dataset/test/y_test.txt", quote="\"", comment.char="")
 
 subject_train <- read.fwf("./train/subject_train.txt",widths = c(3))
-X_train <- read.fwf("./train/X_train.txt",widths = c(15))
-y_train <- read.fwf("./train/y_train.txt",widths = c(3))
-body_acc_x_train <- read.fwf("./train/Inertial Signals/body_acc_x_train.txt",widths = c(16))
-body_acc_y_train <- read.fwf("./train/Inertial Signals/body_acc_y_train.txt",widths = c(16))
-body_acc_z_train <- read.fwf("./train/Inertial Signals/body_acc_z_train.txt",widths = c(16))
-body_gyro_x_train <- read.fwf("./train/Inertial Signals/body_acc_x_train.txt",widths = c(16))
-body_gyro_y_train <- read.fwf("./train/Inertial Signals/body_acc_y_train.txt",widths = c(16))
-body_gyro_z_train <- read.fwf("./train/Inertial Signals/body_acc_z_train.txt",widths = c(16))
-total_acc_x_train <- read.fwf("./train/Inertial Signals/total_acc_x_train.txt",widths = c(16))
-total_acc_y_train <- read.fwf("./train/Inertial Signals/total_acc_y_train.txt",widths = c(16))
-total_acc_z_train <- read.fwf("./train/Inertial Signals/total_acc_z_train.txt",widths = c(16))
+X_train <- read.table("C:/Users/Enrique/Downloads/UCI HAR Dataset/train/X_train.txt", quote="\"", comment.char="")
+y_train <- read.table("C:/Users/Enrique/Downloads/UCI HAR Dataset/train/y_train.txt", quote="\"", comment.char="")
 
-train <- data.frame(subject_train,X_train,y_train,body_acc_x_train,body_acc_y_train,
-                    body_acc_z_train,body_gyro_x_train,body_gyro_y_train,body_gyro_z_train,
-                    total_acc_x_train,total_acc_y_train,total_acc_z_train)
-names(train) <- c("subject","X_train","y_train","body_acc_x_train","body_acc_y_train",
-                  "body_acc_z_train","body_gyro_x_train","body_gyro_y_train","body_gyro_z_train",
-                  "total_acc_x_train","total_acc_y_train","total_acc_z_train")
 
-if("plyr" %in% rownames(installed.packages()) == FALSE) {install.packages("plyr")}
-library(plyr)
-step1 <- join(test,train)
 
-step1.1 <- melt(step1,id.vars = 2:23,measure.vars = "subject")
-step1.2 <- dcast(step1.1,step1.1[,2]~variable,mean)
+step1 <- rbind(X_test,X_train)
 
-means <- data.frame()
-stds <- data.frame()
-for (i in 2:23){
-  x <- step1[step1$subject == i,]
-  mean <- colMeans(x,na.rm = TRUE)
-  std <- apply(x,2,sd)
-  means <- rbind(means,mean)
-  stds <- rbind(stds,std)
-}
-m_s <- data.frame()
-m_s <- rbind(m_s,means);m_s <- cbind(m_s,stds[2:23])
-names(m_s) <- c("subject","X_test_mean","y_test_mean","body_acc_x_test_mean","body_acc_y_test_mean",
-                "body_acc_z_test_mean","body_gyro_x_test_mean","body_gyro_y_test_mean","body_gyro_z_test_mean",
-                "total_acc_x_test_mean","total_acc_y_test_mean","total_acc_z_test_mean","X_train_mean","y_train_mean","body_acc_x_train_mean","body_acc_y_train_mean",
-                "body_acc_z_train_mean","body_gyro_x_train_mean","body_gyro_y_train_mean","body_gyro_z_train_mean",
-                "total_acc_x_train_mean","total_acc_y_train_mean","total_acc_z_train_mean","X_test_sd","y_test_sd","body_acc_x_test_sd","body_acc_y_test_sd",
-                "body_acc_z_test_sd","body_gyro_x_test_sd","body_gyro_y_test_sd","body_gyro_z_test_sd",
-                "total_acc_x_test_sd","total_acc_y_test_sd","total_acc_z_test_sd","X_train_sd","y_train_sd","body_acc_x_train_sd","body_acc_y_train_sd",
-                "body_acc_z_train_sd","body_gyro_x_train_sd","body_gyro_y_train_sd","body_gyro_z_train_sd",
-                "total_acc_x_train_sd","total_acc_y_train_sd","total_acc_z_train_sd")
+X_mean_std_cols <- c(grep("-mean()",features$V2,fixed = TRUE),grep("-std()",features$V2,fixed = TRUE))
+step2 <- step1[,X_mean_std_cols] 
 
+step3.1 <- rbind(y_test,y_train)
+step3.2 <- merge(step3.1,activity_labels,by="V1")
+names(step3.2) <- c("code_activity","activity")
+
+names(step2) <- features[X_mean_std_cols,]$V2
+
+step4.1 <- data.frame(subjects=c(subject_tests$V1,subject_train$V1))
+step4.2 <- cbind(step4.1,step3.2,step2)
+
+step5 <- melt(step4.2,id.vars = c("subjects","code_activity","activity"))
+step5.1 <- ddply(step5,.(subjects,activity,variable),summarize,average_value=mean(value))
+
+step5.2 <- cast(step5.1,subjects + activity ~ variable,value = "average_value")
